@@ -28,7 +28,7 @@ Baby is the future.  Let's nurture the future together❣️
 import { getLandByLocation, refresh } from "https://raw.githubusercontent.com/babyswaplover/landb/0.1.0/mod.ts";
 
 
-// Refresh database (if you want; fetch will skip within 1 minute to prevent server overload)
+// Refresh database (if you want; fetch will be skipped within 1 minute from last fetch to prevent server overload)
 // await refresh();
 
 // get Land of City Center

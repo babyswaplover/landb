@@ -69,7 +69,7 @@ export async function fetchLandInfo(option?:HeadersInit):Promise<Land[]|undefine
       }, option),
       body: JSON.stringify({})
     });
-    console.debug(`[DEBUG] fetchLandInfo(): done at ${getDate()}`);
+    console.debug(`[DEBUG] fetchLandInfo(): done`);
 
     const json = await response.json();
   return json.data.items;
@@ -124,7 +124,7 @@ export async function refresh():Promise<boolean> {
   setValue(KEY_DATE, String(Date.now()));
   db.execute("COMMIT");
 
-  console.debug(`[DEBUG] refresh(): '${filePath}' updated.`);
+  console.debug(`[DEBUG] refresh(): '${filePath}' updated. (${getDate()})`);
   return true;
 }
 
