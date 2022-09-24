@@ -264,14 +264,22 @@ export interface Count {
 
 /**
  * gets number of lands group by size and level
+ * @param userAddress wallet address (optional)
  * @returns 
  */
- export function getCounts():Count[] {
-  const stmt = db.prepareQuery(
-    "SELECT regionWeight, level, count(*) as count FROM Land"
-    + "  GROUP BY regionWeight, level"
-    + "  ORDER BY regionWeight, level");
-    return <Count[]><unknown[]>stmt.allEntries();
+ export function getCounts(userAddress?:string):Count[] {
+  if (userAddress) {
+    return <Count[]><unknown[]>db.prepareQuery(
+      "SELECT regionWeight, level, count(*) as count FROM Land"
+      + "  WHERE userAddress=:userAddress COLLATE NOCASE"
+      + "  GROUP BY regionWeight, level"
+      + "  ORDER BY regionWeight, level").allEntries({userAddress});
+  } else {
+    return <Count[]><unknown[]>db.prepareQuery(
+      "SELECT regionWeight, level, count(*) as count FROM Land"
+      + "  GROUP BY regionWeight, level"
+      + "  ORDER BY regionWeight, level").allEntries();
+  }
 }
 
 // Call refresh() if when database not found
