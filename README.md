@@ -12,7 +12,7 @@ Also, please note that this module may not work properly if the server API chang
 
 This module is for [Deno](https://deno.land/).  Pleasae make sure that Deno is installed on your PC.
 
-Once the land data is fetched from BabySwap Server, it will be stored into local file 'wonderland.db' ([SQLite](https://www.sqlite.org/)) and the file will not be updated until `refresh()` is called or the file is deleted.
+Once the land data is fetched from BabySwap Server, it will be stored into in-memory database ([SQLite](https://www.sqlite.org/)) and the database will not be updated until `refresh()` is called.
 
 To prevent server overload, `refresh()` will be skipped within 1 minute.
 
@@ -25,7 +25,7 @@ Baby is the future.  Let's nurture the future together❣️
 ##### example.ts
 
 ```typescript
-import { getLandByLocation, refresh } from "https://raw.githubusercontent.com/babyswaplover/landb/0.1.0/mod.ts";
+import { getLandByLocation, refresh } from "https://raw.githubusercontent.com/babyswaplover/landb/0.2.0/mod.ts";
 
 
 // Refresh database (if you want; fetch will be skipped within 1 minute from last fetch to prevent server overload)
@@ -39,7 +39,7 @@ console.log(cityCenterLand);
 ##### Execution
 
 ```bash
-$ deno run --allow-net=ld-api.babyswap.io --allow-read=. --allow-write=. example.ts
+$ deno run --allow-net=ld-api.babyswap.io example.ts
 ```
 
 The result will be like:

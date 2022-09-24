@@ -31,9 +31,8 @@ export interface Land {
   tokenId: number;
 }
 
-// Database file
-const filePath = "wonderland.db";
-const db = new DB(filePath);
+// In-memory Database
+const db = new DB();
 
 /**
  * checks if Land data exists in local DB
@@ -56,8 +55,10 @@ export async function fetchLandInfo(option?:HeadersInit):Promise<Land[]|undefine
     console.debug(`[DEBUG] fetchLandInfo(): skipped. (Call after ${nextDate})`);
     return;
   }
+
+  const requestUrl = "https://ld-api.babyswap.io/api/v1/land/info";
   const response = await fetch(
-    "https://ld-api.babyswap.io/api/v1/land/info", {
+    requestUrl, {
       method: 'POST',
       headers: Object.assign({
           "accept": "application/json, text/plain, */*",
@@ -69,7 +70,7 @@ export async function fetchLandInfo(option?:HeadersInit):Promise<Land[]|undefine
       }, option),
       body: JSON.stringify({})
     });
-    console.debug(`[DEBUG] fetchLandInfo(): done`);
+    console.debug(`[DEBUG] fetchLandInfo(): requestUrl=${requestUrl} done`);
 
     const json = await response.json();
   return json.data.items;
@@ -124,7 +125,7 @@ export async function refresh():Promise<boolean> {
   setValue(KEY_DATE, String(Date.now()));
   db.execute("COMMIT");
 
-  console.debug(`[DEBUG] refresh(): '${filePath}' updated. (${getDate()})`);
+  console.debug(`[DEBUG] refresh(): Database updated. (${getDate()})`);
   return true;
 }
 
@@ -286,5 +287,3 @@ export interface Count {
 if (!exists()) {
   await refresh();
 }
-
-console.debug(`[DEBUG] '${filePath}' loaded. (Fetched at ${getDate()})`);
