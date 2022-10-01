@@ -25,7 +25,7 @@ Baby is the future.  Let's nurture the future together❣️
 ##### example.ts
 
 ```typescript
-import { getLandByLocation, refresh } from "https://raw.githubusercontent.com/babyswaplover/landb/0.2.0/mod.ts";
+import { getLandByLocation, refresh } from "https://raw.githubusercontent.com/babyswaplover/landb/0.2.1/mod.ts";
 
 
 // Refresh database (if you want; fetch will be skipped within 1 minute from last fetch to prevent server overload)
@@ -58,3 +58,19 @@ The result will be like:
   tokenId: 183
 }
 ```
+
+## Tips
+
+### Database file
+
+You can save fetched data into SQLite database file.
+
+Specify Environment variable 'LANDB_PATH'
+
+```
+$ LANDB_PATH=./wonderland.db --allow-env=LANDB_PATH --allow-net=ld-api.babyswap.io --allow-write=. --allow-read=. test.ts
+```
+
+The fetch will be executed when file doesn't exist or invoke refresh()
+
+Also, if the file specified in 'LAND_PATH' does not have write permissions by '--allow-write', the file will be open in readonly mode.

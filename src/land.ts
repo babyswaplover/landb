@@ -31,8 +31,12 @@ export interface Land {
   tokenId: number;
 }
 
-// In-memory Database
-const db = new DB();
+// In-memory Database for Default
+// Check permission of environment variable 'LANDB_PATH'.
+const permission = await Deno.permissions.query({name:"env", variable:"LANDB_PATH"});
+const filePath = (permission.state == "granted") ? Deno.env.get("LANDB_PATH") : undefined;
+const readOnly = filePath && (await Deno.permissions.query({name:"write", path:filePath})).state != "granted";
+const db = new DB(filePath, {mode: readOnly ? "read" : undefined});
 
 /**
  * checks if Land data exists in local DB
@@ -283,7 +287,73 @@ export interface Count {
   }
 }
 
+/**
+ * 
+ */
+export interface OwnerInfo {
+  /** Address of Owner */
+  userAddress:string;
+
+  /** land (order by locations) */
+  lands:Land[];
+
+  /** counts of lands (0:total NFTs, 1:1x1 lands, 2:2x2 land, ...) */
+  counts: number[];
+}
+
+/**
+ * 
+ * @returns 
+ */
+export function getOwnerInfoMap(descending=true):Map<string,OwnerInfo> {
+  // Create map
+  const ownerInfoMap = getLands().reduce((map, land)=>{
+    const userAddress = land.userAddress;
+    let info = map.get(userAddress);
+    if (!info) {
+      info = {
+        userAddress,
+        lands: [],
+        counts: [0]
+      };
+      map.set(userAddress, info);
+    }
+
+    info.lands.push(land);
+    info.counts[0] += land.regionWeight ** 2;
+    info.counts[land.regionWeight] = (info.counts[land.regionWeight] ?? 0) + 1;
+    return map;
+  }, new Map<string, OwnerInfo>());
+
+  // Sort by number of lands and alphabetic order
+  return new Map([...ownerInfoMap].sort((a,b)=>{
+    const sign = descending ? -1 : 0;
+    const acounts = a[1].counts;
+    const bcounts = b[1].counts;
+    let value;
+
+    // sort by number of land NFT, larger land
+    if ((value = acounts[0] - bcounts[0])) {
+      return sign * value;
+    }
+    const maxlength = Math.max(acounts.length, bcounts.length);
+    for (let i = maxlength -1; i>=1; i--) {
+      if ((value = acounts[i] - bcounts[i])) {
+        return sign * value;
+      }
+    }
+
+    // order by address if same
+    return a[0].localeCompare(b[0]);
+  }));
+}
+
+
 // Call refresh() if when database not found
 if (!exists()) {
   await refresh();
+}
+
+if (filePath) {
+  console.debug(`[DEBUG] '${filePath}' loaded. (Last fetched:${getDate()})`);
 }
