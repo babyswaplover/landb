@@ -9,6 +9,7 @@ export {
   getAdjacentLands,
   getLandByLocation,
   getLandByTokenId,
+  getNeighbors,
   getOnMarketLands,
   getOwnerInfoMap
 } from "./src/land.ts"

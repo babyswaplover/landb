@@ -348,6 +348,45 @@ export function getOwnerInfoMap(descending=true):Map<string,OwnerInfo> {
   }));
 }
 
+/**
+ * gets neighbor address, lands map
+ * @param userAddress wallet address
+ * @param descending 
+ * @returns map of (address, lands)
+ */
+export function getNeighbors(userAddress:string, descending=true):Map<string,Land[]> {
+  const neighborMap = new Map<string,Land[]>();
+  for (const myLand of getLands(userAddress)) {
+    for (const adjacent of getAdjacentLands(myLand)) {
+      let lands = neighborMap.get(adjacent.userAddress);
+      if (!lands) {
+        lands = [];
+        neighborMap.set(adjacent.userAddress, lands);
+      }
+      // Skip same tokenId
+      if (!lands.find(land=>adjacent.tokenId == land.tokenId)) {
+        lands.push(adjacent);
+      }
+    }
+  }
+
+  // sort lands by location x, y
+  const sorted:Land[][] = [];
+  for (const lands of neighborMap.values()) {
+    sorted.push(lands.sort((a,b)=>{
+      return (a.x - b.x) || (a.y - b.y);
+    }));
+  }
+
+  // sort by length of lands, address
+  const sign = descending ? -1 : 0;
+  return sorted.sort((a, b)=>{
+    return sign * (a.length - b.length) || a[0].userAddress.localeCompare(b[0].userAddress); 
+  }).reduce((map, lands)=>{
+    map.set(lands[0].userAddress, lands);
+    return map;
+  }, new Map<string,Land[]>);
+}
 
 // Call refresh() if when database not found
 if (!exists()) {
