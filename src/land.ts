@@ -358,14 +358,19 @@ export function getNeighbors(userAddress:string, descending=true):Map<string,Lan
   const neighborMap = new Map<string,Land[]>();
   for (const myLand of getLands(userAddress)) {
     for (const adjacent of getAdjacentLands(myLand)) {
-      let lands = neighborMap.get(adjacent.userAddress);
-      if (!lands) {
-        lands = [];
-        neighborMap.set(adjacent.userAddress, lands);
+      if (adjacent.userAddress == userAddress) {
+        // Ignore owned address
+        continue;
       }
-      // Skip same tokenId
-      if (!lands.find(land=>adjacent.tokenId == land.tokenId)) {
-        lands.push(adjacent);
+
+      const lands = neighborMap.get(adjacent.userAddress);
+      if (lands) {
+        // Skip same tokenId
+        if (!lands.find(land=>adjacent.tokenId == land.tokenId)) {
+          lands.push(adjacent);
+        }
+      } else {
+        neighborMap.set(adjacent.userAddress, [adjacent]);
       }
     }
   }
