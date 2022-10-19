@@ -25,7 +25,7 @@ Baby is the future.  Let's nurture the future together❣️
 ##### example.ts
 
 ```typescript
-import { getLandByLocation, refresh } from "https://raw.githubusercontent.com/babyswaplover/landb/0.2.1/mod.ts";
+import { getLandByLocation, refresh } from "https://raw.githubusercontent.com/babyswaplover/landb/0.2.4/mod.ts";
 
 
 // Refresh database (if you want; fetch will be skipped within 1 minute from last fetch to prevent server overload)
@@ -74,3 +74,13 @@ $ LANDB_PATH=./wonderland.db --allow-env=LANDB_PATH --allow-net=ld-api.babyswap.
 The fetch will be executed when file doesn't exist or invoke refresh()
 
 Also, if the file specified in 'LAND_PATH' does not have write permissions by '--allow-write', the file will be open in readonly mode.
+
+## Analysis tool for Baby Wonderland
+
+Here is a simple analysis tool using landb.
+
+https://landanalyzer.deno.dev/
+
+##### Source
+
+https://github.com/babyswaplover/landanalyzer

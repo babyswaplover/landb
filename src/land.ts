@@ -14,6 +14,7 @@ const FETCH_INTERVAL = 60 * 1000; // Skip fetch again within 1 minute
 
 // Key for storing fetch date
 const KEY_DATE = "date";
+const KEY_DATE_REQUESTED = "dateRequest";
 
 /**
  * Land
@@ -40,6 +41,12 @@ const filePath = (permission.state == "granted") ? Deno.env.get("LANDB_PATH") : 
 const readOnly = filePath && (await Deno.permissions.query({name:"write", path:filePath})).state != "granted";
 const db = new DB(filePath, {mode: readOnly ? "read" : undefined});
 
+// Store other information
+db.execute("CREATE TABLE IF NOT EXISTS Info ("
+    + "  name TEXT PRIMARY KEY,"
+    + "  value TEXT NOT NULL"
+    + ");");
+
 /**
  * checks if Land data exists in local DB
  * @returns true if exists
@@ -55,12 +62,15 @@ export function exists():boolean {
  * @returns lands (undefined if this function is called within 1 minute)
  */
 export async function fetchLandInfo(option?:HeadersInit):Promise<Land[]|undefined> {
-  const lastFetched = Number(getValue(KEY_DATE));
-  if (exists() && Date.now() < lastFetched + FETCH_INTERVAL) {
-    const nextDate = format(new Date(lastFetched + FETCH_INTERVAL), 'yyyy-MM-dd HH:mm:ss');
+  const lastRequested = Number(getValue(KEY_DATE_REQUESTED));
+  if (exists() && Date.now() < lastRequested + FETCH_INTERVAL) {
+    const nextDate = format(new Date(lastRequested + FETCH_INTERVAL), 'yyyy-MM-dd HH:mm:ss');
     console.debug(`[DEBUG] fetchLandInfo(): skipped. (Call after ${nextDate})`);
     return;
   }
+
+  // Set requested date first
+  setValue(KEY_DATE_REQUESTED, String(Date.now()));
 
   const requestUrl = "https://ld-api.babyswap.io/api/v1/land/info";
   const response = await fetch(
@@ -83,6 +93,19 @@ export async function fetchLandInfo(option?:HeadersInit):Promise<Land[]|undefine
 }
 
 /**
+ * 
+ * @param object including land
+ * @returns land
+ */
+function extract({
+  regionWeight, regionId, x, y, imageUrl, imageStatus, level, onMarket, userAddress, tokenId, marketX, marketY
+}:any):Land {
+  return {
+    regionWeight, regionId, x, y, imageUrl, imageStatus, level, onMarket, userAddress, tokenId, marketX, marketY
+  }
+}
+
+/**
  * refresh database with fetching from BabySwap
  * @return
  */
@@ -90,6 +113,19 @@ export async function refresh():Promise<boolean> {
   const lands = await fetchLandInfo();
   if (!lands) {
     return false;
+  }
+
+  // Check new field found
+  if (lands.length > 0) {
+    const newKeys = Object.keys(lands[0]);
+    const currentKeys = Object.keys(extract(lands[0]));
+    if (newKeys.length != currentKeys.length) {
+      for (const key of newKeys) {
+        if (!currentKeys.includes(key)) {
+          console.warn(`[WARN] new field found. (${key})`);
+        }
+      }
+    }
   }
 
   db.execute("BEGIN TRANSACTION");
@@ -107,7 +143,7 @@ export async function refresh():Promise<boolean> {
     + "  userAddress  TEXT NOT NULL,"
     + "  tokenId      INT  UNIQUE,"
     + "  marketX      INT NOT NULL,"
-    + "  marketY      INT NOR NULL,"
+    + "  marketY      INT NOT NULL,"
     + "  UNIQUE (x, y)"
     + ");");
 
@@ -118,19 +154,12 @@ export async function refresh():Promise<boolean> {
       + " :regionWeight,:regionId,:x,:y,:imageUrl,:imageStatus,:level,:onMarket,:userAddress,:tokenId,:marketX,:marketY"
       + ")");
   for (const land of lands) {
-    stmt.execute(land);
+    stmt.execute(<any>extract(land));
   }
 
-  // Store other information
-  db.execute("DROP TABLE IF EXISTS Info");
-  db.execute(
-    "CREATE TABLE Info ("
-      + "  name TEXT PRIMARY KEY,"
-      + "  value TEXT NOT NULL"
-      + ");");
-
   // Set fetch date
-  setValue(KEY_DATE, String(Date.now()));
+  const lastRequested = getValue(KEY_DATE_REQUESTED);
+  setValue(KEY_DATE, lastRequested!);
   db.execute("COMMIT");
 
   console.debug(`[DEBUG] refresh(): Database updated. (${getDate()})`);
