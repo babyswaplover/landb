@@ -29,6 +29,8 @@ export interface Land {
   onMarket: number;
   userAddress: string;
   tokenId: number;
+  marketX: number;
+  marketY: number;
 }
 
 // In-memory Database for Default
@@ -104,14 +106,16 @@ export async function refresh():Promise<boolean> {
     + "  onMarket     INT  NOT NULL,"
     + "  userAddress  TEXT NOT NULL,"
     + "  tokenId      INT  UNIQUE,"
+    + "  marketX      INT NOT NULL,"
+    + "  marketY      INT NOR NULL,"
     + "  UNIQUE (x, y)"
     + ");");
 
   const stmt = db.prepareQuery(
       "INSERT INTO Land ("
-      + "  regionWeight, regionId, x, y, imageUrl, imageStatus, level, onMarket, userAddress, tokenId"
+      + "  regionWeight, regionId, x, y, imageUrl, imageStatus, level, onMarket, userAddress, tokenId, marketX, marketY"
       + ") VALUES ("
-      + " :regionWeight,:regionId,:x,:y,:imageUrl,:imageStatus,:level,:onMarket,:userAddress,:tokenId"
+      + " :regionWeight,:regionId,:x,:y,:imageUrl,:imageStatus,:level,:onMarket,:userAddress,:tokenId,:marketX,:marketY"
       + ")");
   for (const land of lands) {
     stmt.execute(land);
