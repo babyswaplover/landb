@@ -277,10 +277,10 @@ export function getAdjacentLands(land:Land, padding=1):Land[] {
     + "  WHERE regionId IN ("
     + "    SELECT regionId FROM Land"
     + "    WHERE"
-    + "      x >= :startX AND"
+    + "      x + regionWeight - 1 >= :startX AND"
     + "      x <= :endX   AND"
     + "      y >= :startY AND"
-    + "      y <= :endY   AND"
+    + "      y - regionWeight + 1 <= :endY   AND"
     + "      regionId != :regionId"
     + "  )"
     + "  ORDER BY x, y");
