@@ -32,6 +32,9 @@ export interface Land {
   tokenId: number;
   marketX: number;
   marketY: number;
+  signType: number;
+  signImgUrl: string;
+  userTokenId: number;
 }
 
 // In-memory Database for Default
@@ -82,7 +85,7 @@ export async function fetchLandInfo(option?:HeadersInit):Promise<Land[]|undefine
           "Path": "/api/v1/land/info",
           "Origin": "https://land.babyswap.finance",
           "Referer": "https://land.babyswap.finance/",
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36"
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"
       }, option),
       body: JSON.stringify({})
     });
@@ -98,10 +101,12 @@ export async function fetchLandInfo(option?:HeadersInit):Promise<Land[]|undefine
  * @returns land
  */
 function extract({
-  regionWeight, regionId, x, y, imageUrl, imageStatus, level, onMarket, userAddress, tokenId, marketX, marketY
+  regionWeight, regionId, x, y, imageUrl, imageStatus, level, onMarket, userAddress, tokenId, marketX, marketY,
+  signType, signImgUrl, userTokenId
 }:any):Land {
   return {
-    regionWeight, regionId, x, y, imageUrl, imageStatus, level, onMarket, userAddress, tokenId, marketX, marketY
+    regionWeight, regionId, x, y, imageUrl, imageStatus, level, onMarket, userAddress, tokenId, marketX, marketY,
+    signType, signImgUrl, userTokenId
   }
 }
 
@@ -142,16 +147,19 @@ export async function refresh():Promise<boolean> {
     + "  onMarket     INT  NOT NULL,"
     + "  userAddress  TEXT NOT NULL,"
     + "  tokenId      INT  UNIQUE,"
-    + "  marketX      INT NOT NULL,"
-    + "  marketY      INT NOT NULL,"
+    + "  marketX      INT," // NOT NULL (null in tokenId 3922 on 12/18/2022)
+    + "  marketY      INT," // NOT NULL (null in tokenId 3922 on 12/18/2022)
+    + "  signType     INT NOT NULL,"
+    + "  signImgUrl   TEXT,"
+    + "  userTokenId  INT," // NOT NULL (null in tokenId 3922 on 12/18/2022)
     + "  UNIQUE (x, y)"
     + ");");
 
   const stmt = db.prepareQuery(
       "INSERT INTO Land ("
-      + "  regionWeight, regionId, x, y, imageUrl, imageStatus, level, onMarket, userAddress, tokenId, marketX, marketY"
+      + "  regionWeight, regionId, x, y, imageUrl, imageStatus, level, onMarket, userAddress, tokenId, marketX, marketY, signType, signImgUrl, userTokenId"
       + ") VALUES ("
-      + " :regionWeight,:regionId,:x,:y,:imageUrl,:imageStatus,:level,:onMarket,:userAddress,:tokenId,:marketX,:marketY"
+      + " :regionWeight,:regionId,:x,:y,:imageUrl,:imageStatus,:level,:onMarket,:userAddress,:tokenId,:marketX,:marketY,:signType,:signImgUrl,:userTokenId"
       + ")");
   for (const land of lands) {
     stmt.execute(<any>extract(land));
@@ -424,6 +432,31 @@ export function getNeighbors(userAddress:string, descending=true):Map<string,Lan
     map.set(lands[0].userAddress, lands);
     return map;
   }, new Map<string,Land[]>);
+}
+
+const EXCEPTION_TOKEN_IDS = [
+  183,  // (-16,  5): 30x30 for BabySwap
+  1044, // ( 38,-71): 12x12 for
+  1123, // ( 34,  3): 12x12 for Binance
+  1332, // ( 28,-30): 12x12 for CoinMarketCap
+  1334, // ( 57, 45): 12x12 for
+  1574, // ( 44, 64): 12x12 for
+  1714, // ( 27, 38): 12x12 for apolloX
+  1878, // ( -2,-42): 12x12 for
+  1933, // (-18, 39): 12x12 for BNB Chain
+  2190, // (-52, -9): 12x12 for
+  2336  // (-68, 45): 12x12 for Baby Wealthy Club
+];
+const SIGNTYPE_MULTIPLIER = [1, 1.5, 1.3, 1.1];
+
+export function calcProsperityPoint(land:Land): number {
+  if (EXCEPTION_TOKEN_IDS.includes(land.tokenId)) {
+    return 0;
+  }
+  const sizeMultiplier = land.regionWeight == 1 ? 1 : land.regionWeight - 0.5;
+  const landlordMultiplier = SIGNTYPE_MULTIPLIER[land.signType];
+  const basePoint = (land.level == 2) ? 120 : 100;
+  return Math.round(basePoint * (land.regionWeight**2) * sizeMultiplier * landlordMultiplier);
 }
 
 // Call refresh() if when database not found
