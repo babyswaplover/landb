@@ -35,6 +35,7 @@ export interface Land {
   signType: number;
   signImgUrl: string;
   userTokenId: number;
+  landType: number;
 }
 
 // In-memory Database for Default
@@ -64,7 +65,7 @@ export function exists():boolean {
  * Should not call so many times to prevent server overload.
  * @returns lands (undefined if this function is called within 1 minute)
  */
-export async function fetchLandInfo(option?:HeadersInit):Promise<Land[]|undefined> {
+export async function fetchLandInfo(landType=0, option?:HeadersInit):Promise<Land[]|undefined> {
   const lastRequested = Number(getValue(KEY_DATE_REQUESTED));
   if (exists() && Date.now() < lastRequested + FETCH_INTERVAL) {
     const nextDate = format(new Date(lastRequested + FETCH_INTERVAL), 'yyyy-MM-dd HH:mm:ss');
@@ -87,9 +88,9 @@ export async function fetchLandInfo(option?:HeadersInit):Promise<Land[]|undefine
           "Referer": "https://land.babyswap.finance/",
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"
       }, option),
-      body: JSON.stringify({})
+      body: JSON.stringify({landType})
     });
-    console.debug(`[DEBUG] fetchLandInfo(): requestUrl=${requestUrl} done`);
+    console.debug(`[DEBUG] fetchLandInfo(landType:${landType}): requestUrl=${requestUrl} done`);
 
     const json = await response.json();
   return json.data.items;
@@ -102,11 +103,11 @@ export async function fetchLandInfo(option?:HeadersInit):Promise<Land[]|undefine
  */
 function extract({
   regionWeight, regionId, x, y, imageUrl, imageStatus, level, onMarket, userAddress, tokenId, marketX, marketY,
-  signType, signImgUrl, userTokenId
+  signType, signImgUrl, userTokenId, landType
 }:any):Land {
   return {
     regionWeight, regionId, x, y, imageUrl, imageStatus, level, onMarket, userAddress, tokenId, marketX, marketY,
-    signType, signImgUrl, userTokenId
+    signType, signImgUrl, userTokenId, landType
   }
 }
 
@@ -115,22 +116,29 @@ function extract({
  * @return
  */
 export async function refresh():Promise<boolean> {
-  const lands = await fetchLandInfo();
-  if (!lands) {
-    return false;
-  }
-
-  // Check new field found
-  if (lands.length > 0) {
-    const newKeys = Object.keys(lands[0]);
-    const currentKeys = Object.keys(extract(lands[0]));
-    if (newKeys.length != currentKeys.length) {
-      for (const key of newKeys) {
-        if (!currentKeys.includes(key)) {
-          console.warn(`[WARN] new field found. (${key})`);
+  const islands = [];
+  for (const landType of [
+    0, // Main Land
+    1  // Divinity Land
+  ]) {
+    const lands = await fetchLandInfo(landType);
+    if (!lands) {
+      return false;
+    }
+  
+    // Check new field found
+    if (lands.length > 0) {
+      const newKeys = Object.keys(lands[0]);
+      const currentKeys = Object.keys(extract(lands[0]));
+      if (newKeys.length != currentKeys.length) {
+        for (const key of newKeys) {
+          if (!currentKeys.includes(key)) {
+            console.warn(`[WARN] new field found. (${key})`);
+          }
         }
       }
     }
+    islands.push(lands);
   }
 
   db.execute("BEGIN TRANSACTION");
@@ -152,17 +160,20 @@ export async function refresh():Promise<boolean> {
     + "  signType     INT NOT NULL,"
     + "  signImgUrl   TEXT,"
     + "  userTokenId  INT," // NOT NULL (null in tokenId 3922 on 12/18/2022)
+    + "  landType     INT,"
     + "  UNIQUE (x, y)"
     + ");");
 
   const stmt = db.prepareQuery(
       "INSERT INTO Land ("
-      + "  regionWeight, regionId, x, y, imageUrl, imageStatus, level, onMarket, userAddress, tokenId, marketX, marketY, signType, signImgUrl, userTokenId"
+      + "  regionWeight, regionId, x, y, imageUrl, imageStatus, level, onMarket, userAddress, tokenId, marketX, marketY, signType, signImgUrl, userTokenId, landType"
       + ") VALUES ("
-      + " :regionWeight,:regionId,:x,:y,:imageUrl,:imageStatus,:level,:onMarket,:userAddress,:tokenId,:marketX,:marketY,:signType,:signImgUrl,:userTokenId"
+      + " :regionWeight,:regionId,:x,:y,:imageUrl,:imageStatus,:level,:onMarket,:userAddress,:tokenId,:marketX,:marketY,:signType,:signImgUrl,:userTokenId, :landType"
       + ")");
-  for (const land of lands) {
-    stmt.execute(<any>extract(land));
+  for (const lands of islands) {
+    for (const land of lands) {
+      stmt.execute(<any>extract(land));
+    }
   }
 
   // Set fetch date

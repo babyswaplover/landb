@@ -25,7 +25,7 @@ Baby is the future.  Let's nurture the future together❣️
 ##### example.ts
 
 ```typescript
-import { getLandByLocation, refresh } from "https://raw.githubusercontent.com/babyswaplover/landb/0.2.4/mod.ts";
+import { getLandByLocation, refresh } from "https://raw.githubusercontent.com/babyswaplover/landb/0.2.7/mod.ts";
 
 
 // Refresh database (if you want; fetch will be skipped within 1 minute from last fetch to prevent server overload)
@@ -50,12 +50,18 @@ The result will be like:
   regionId: 10199,
   x: -16,
   y: 5,
-  imageUrl: "https://s3.ap-southeast-1.amazonaws.com/baby-upload/land/Land_Main01.png",
+  imageUrl: "https://s3.ap-southeast-1.amazonaws.com/baby-upload/land/0310Mainland_Pic.png",
   imageStatus: "2",
   level: 1,
   onMarket: 0,
-  userAddress: "0x3a952c1a235fe9ac5dc4baa2c0c73595ec5a70e8",
-  tokenId: 183
+  userAddress: "0x3872455d74befdebee37da608b262b01a16f5045",
+  tokenId: 183,
+  marketX: -16,
+  marketY: 5,
+  signType: 0,
+  signImgUrl: null,
+  userTokenId: 0,
+  landType: 0
 }
 ```
 
