@@ -67,7 +67,7 @@ export function exists():boolean {
  */
 export async function fetchLandInfo(landType=0, option?:HeadersInit):Promise<Land[]|undefined> {
   const lastRequested = Number(getValue(KEY_DATE_REQUESTED));
-  if (exists() && Date.now() < lastRequested + FETCH_INTERVAL) {
+  if (landType == 0 && exists() && Date.now() < lastRequested + FETCH_INTERVAL) {
     const nextDate = format(new Date(lastRequested + FETCH_INTERVAL), 'yyyy-MM-dd HH:mm:ss');
     console.debug(`[DEBUG] fetchLandInfo(): skipped. (Call after ${nextDate})`);
     return;
