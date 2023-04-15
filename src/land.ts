@@ -236,10 +236,10 @@ export function getDate(): string|undefined {
  */
 export function getLands(userAddress?:string):Land[] {
   if (userAddress) {
-    const stmt = db.prepareQuery("SELECT * FROM Land WHERE userAddress=:userAddress COLLATE NOCASE ORDER BY x, y");
+    const stmt = db.prepareQuery("SELECT * FROM Land WHERE userAddress=:userAddress COLLATE NOCASE ORDER BY landType, x, y");
     return <Land[]><unknown[]>stmt.allEntries({userAddress});
   } else {
-    const stmt = db.prepareQuery("SELECT * FROM Land ORDER BY x, y")
+    const stmt = db.prepareQuery("SELECT * FROM Land ORDER BY landType, x, y")
     return <Land[]><unknown[]>stmt.allEntries();
   }
 }
