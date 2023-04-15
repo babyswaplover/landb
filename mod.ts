@@ -1,6 +1,8 @@
 export type { Land } from "./src/land.ts";
 
 export {
+  calcProsperityPoint,
+  calcProsperityPoints,
   exists,
   refresh,
   getDate,

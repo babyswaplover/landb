@@ -92,7 +92,7 @@ export async function fetchLandInfo(landType=0, option?:HeadersInit):Promise<Lan
     });
     console.debug(`[DEBUG] fetchLandInfo(landType:${landType}): requestUrl=${requestUrl} done`);
 
-    const json = await response.json();
+  const json = await response.json();
   return json.data.items;
 }
 
@@ -102,7 +102,7 @@ export async function fetchLandInfo(landType=0, option?:HeadersInit):Promise<Lan
  * @returns land
  */
 function extract({
-  regionWeight, regionId, x, y, imageUrl, imageStatus, level, onMarket, userAddress, tokenId, marketX, marketY,
+ regionWeight, regionId, x, y, imageUrl, imageStatus, level, onMarket, userAddress, tokenId, marketX, marketY,
   signType, signImgUrl, userTokenId, landType
 }:any):Land {
   return {
@@ -279,7 +279,7 @@ export function getLandByRegionId(regionId:number):Land {
 
 
 export function getOnMarketLands():Land[] {
-  const stmt = db.prepareQuery("SELECT * FROM Land WHERE onMarket = 1 ORDER BY x, y");
+  const stmt = db.prepareQuery("SELECT * FROM Land WHERE onMarket = 1 ORDER BY landType, x, y");
   return <Land[]><unknown[]>stmt.allEntries();
 }
 
@@ -296,15 +296,17 @@ export function getAdjacentLands(land:Land, padding=1):Land[] {
     + "  WHERE regionId IN ("
     + "    SELECT regionId FROM Land"
     + "    WHERE"
+    + "      landType = :landType"
     + "      x + regionWeight - 1 >= :startX AND"
     + "      x <= :endX   AND"
     + "      y >= :startY AND"
     + "      y - regionWeight + 1 <= :endY   AND"
     + "      regionId != :regionId"
     + "  )"
-    + "  ORDER BY x, y");
+    + "  ORDER BY landType, x, y");
 
   return <Land[]><unknown[]>stmt.allEntries({
+    landType:   land.landType,
     startX:   land.x - padding,
     startY:   land.y - land.regionWeight - padding + 1,
     endX:     land.x + land.regionWeight + padding - 1,
@@ -322,20 +324,36 @@ export interface Count {
 /**
  * gets number of lands group by size and level
  * @param userAddress wallet address (optional)
+ * @param groupByIsland group by island (optional)
  * @returns 
  */
- export function getCounts(userAddress?:string):Count[] {
-  if (userAddress) {
-    return <Count[]><unknown[]>db.prepareQuery(
-      "SELECT regionWeight, level, count(*) as count FROM Land"
-      + "  WHERE userAddress=:userAddress COLLATE NOCASE"
-      + "  GROUP BY regionWeight, level"
-      + "  ORDER BY regionWeight, level").allEntries({userAddress});
+ export function getCounts(userAddress?:string, groupByIsland=false):Count[] {
+  if (groupByIsland) {
+    if (userAddress) {
+      return <Count[]><unknown[]>db.prepareQuery(
+        "SELECT landType, regionWeight, level, count(*) as count FROM Land"
+        + "  WHERE userAddress=:userAddress COLLATE NOCASE"
+        + "  GROUP BY landType, regionWeight, level"
+        + "  ORDER BY landType, regionWeight, level").allEntries({userAddress});
+    } else {
+      return <Count[]><unknown[]>db.prepareQuery(
+        "SELECT landType, regionWeight, level, count(*) as count FROM Land"
+        + "  GROUP BY landType, regionWeight, level"
+        + "  ORDER BY landType, regionWeight, level").allEntries();
+    }
   } else {
-    return <Count[]><unknown[]>db.prepareQuery(
-      "SELECT regionWeight, level, count(*) as count FROM Land"
-      + "  GROUP BY regionWeight, level"
-      + "  ORDER BY regionWeight, level").allEntries();
+    if (userAddress) {
+      return <Count[]><unknown[]>db.prepareQuery(
+        "SELECT regionWeight, level, count(*) as count FROM Land"
+        + "  WHERE userAddress=:userAddress COLLATE NOCASE"
+        + "  GROUP BY regionWeight, level"
+        + "  ORDER BY regionWeight, level").allEntries({userAddress});
+    } else {
+      return <Count[]><unknown[]>db.prepareQuery(
+        "SELECT regionWeight, level, count(*) as count FROM Land"
+        + "  GROUP BY regionWeight, level"
+        + "  ORDER BY regionWeight, level").allEntries();
+    }
   }
 }
 
@@ -446,19 +464,51 @@ export function getNeighbors(userAddress:string, descending=true):Map<string,Lan
 }
 
 const EXCEPTION_TOKEN_IDS = [
-  183,  // (-16,  5): 30x30 for BabySwap
-  1044, // ( 38,-71): 12x12 for
-  1123, // ( 34,  3): 12x12 for Binance
-  1332, // ( 28,-30): 12x12 for CoinMarketCap
-  1334, // ( 57, 45): 12x12 for
-  1574, // ( 44, 64): 12x12 for
-  1714, // ( 27, 38): 12x12 for apolloX
-  1878, // ( -2,-42): 12x12 for
-  1933, // (-18, 39): 12x12 for BNB Chain
-  2190, // (-52, -9): 12x12 for
-  2336  // (-68, 45): 12x12 for Baby Wealthy Club
+  // Main landd
+  183,    // ( -16,   5): 30x30 for BabySwap
+  1044,   // (  38, -71): 12x12 for
+  1123,   // (  34,   3): 12x12 for Binance
+  1332,   // (  28, -30): 12x12 for CoinMarketCap
+  1334,   // (  57,  45): 12x12 for
+  1574,   // (  44,  64): 12x12 for
+  1714,   // (  27,  38): 12x12 for apolloX
+  1878,   // (  -2, -42): 12x12 for
+  1933,   // ( -18,  39): 12x12 for BNB Chain
+  2190,   // ( -52,  -9): 12x12 for
+  2336,   // ( -68,  45): 12x12 for Baby Wealthy Club
+
+  // Divinity land
+  15001,  // (-139,-118): 10x10 for BabySwap
+  15137,  // (-216, -89): 6x6
+  15497,  // (-206,-150): 6x6
+  15173,  // (-206, -56): 6x6
+  15353,  // (-195,-114): 6x6
+  15317,  // (-180, -68): 6x6
+  15677,  // (-179,-144): 6x6
+  15785,  // (-177,-164): 6x6
+  15461,  // (-177,-101): 6x6
+  15245,  // (-176,-192): 6x6
+  15749,  // (-174, -12): 6x6
+  15605,  // (-156,-136): 6x6
+  15713,  // (-145, -89): 6x6
+  15389,  // (-142, -60): 6x6
+  15281,  // (-122,-175): 6x6
+  15101,  // (-106,-150): 6x6
+  15641,  // (-105,-107): 6x6
+  15209,  // ( -99, -56): 6x6
+  15533,  // ( -82,-163): 6x6
+  15569,  // ( -81, -72): 6x6
+  15425,  // ( -66,-123): 6x6
 ];
-const SIGNTYPE_MULTIPLIER = [1, 1.5, 1.3, 1.1];
+const SIGNTYPE_MULTIPLIER = [1, 1.5, 1.3, 1.1, 1.5];
+const LAND_BASE_POINT:{[key:number]: number}[] = [
+  {1:100, 2:120}, // 0: Main land
+  {1: 50, 2: 60}, // 1: Divinity Land
+];
+
+export function calcProsperityPoints(address?:string): number {
+ return getLands(address).reduce((total, land)=>total + calcProsperityPoint(land), 0);
+}
 
 export function calcProsperityPoint(land:Land): number {
   if (EXCEPTION_TOKEN_IDS.includes(land.tokenId)) {
@@ -466,8 +516,8 @@ export function calcProsperityPoint(land:Land): number {
   }
   const sizeMultiplier = land.regionWeight == 1 ? 1 : land.regionWeight - 0.5;
   const landlordMultiplier = SIGNTYPE_MULTIPLIER[land.signType];
-  const basePoint = (land.level == 2) ? 120 : 100;
-  return Math.round(basePoint * (land.regionWeight**2) * sizeMultiplier * landlordMultiplier);
+  const basePoint = LAND_BASE_POINT[land.landType][land.level];
+  return basePoint * (land.regionWeight**2) * sizeMultiplier * landlordMultiplier;
 }
 
 // Call refresh() if when database not found
