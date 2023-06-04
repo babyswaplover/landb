@@ -24,8 +24,8 @@ export interface Land {
   regionId: number;
   x: number;
   y: number;
-  imageUrl: string;
-  imageStatus: string;
+  imageUrl?: string;
+  imageStatus: number;
   level: number;
   onMarket: number;
   userAddress: string;
@@ -33,9 +33,13 @@ export interface Land {
   marketX: number;
   marketY: number;
   signType: number;
-  signImgUrl: string;
+  signImgUrl?: string;
   userTokenId: number;
   landType: number;
+  notifyExist:boolean;
+  creator?: string;
+  skipPP: number;
+  notifyId?: string;
 }
 
 // In-memory Database for Default
@@ -86,7 +90,7 @@ export async function fetchLandInfo(landType=0, option?:HeadersInit):Promise<Lan
           "Path": "/api/v1/land/info",
           "Origin": "https://land.babyswap.finance",
           "Referer": "https://land.babyswap.finance/",
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
       }, option),
       body: JSON.stringify({landType})
     });
@@ -103,11 +107,13 @@ export async function fetchLandInfo(landType=0, option?:HeadersInit):Promise<Lan
  */
 function extract({
  regionWeight, regionId, x, y, imageUrl, imageStatus, level, onMarket, userAddress, tokenId, marketX, marketY,
-  signType, signImgUrl, userTokenId, landType
+  signType, signImgUrl, userTokenId, landType,
+  notifyExist, creator, skipPP, notifyId
 }:any):Land {
   return {
     regionWeight, regionId, x, y, imageUrl, imageStatus, level, onMarket, userAddress, tokenId, marketX, marketY,
-    signType, signImgUrl, userTokenId, landType
+    signType, signImgUrl, userTokenId, landType,
+    notifyExist: (notifyExist == 0), creator, skipPP, notifyId
   }
 }
 
@@ -119,7 +125,8 @@ export async function refresh():Promise<boolean> {
   const islands = [];
   for (const landType of [
     0, // Main Land
-    1  // Divinity Land
+    1, // Divinity Land (2023/03/10)
+    2  // Wizard Land (2023/06/02)
   ]) {
     const lands = await fetchLandInfo(landType);
     if (!lands) {
@@ -150,7 +157,7 @@ export async function refresh():Promise<boolean> {
     + "  x            INT NOT NULL,"
     + "  y            INT NOT NULL,"
     + "  imageUrl     TEXT,"
-    + "  imageStatus  TEXT,"
+    + "  imageStatus  INT,"
     + "  level        INT  NOT NULL,"
     + "  onMarket     INT  NOT NULL,"
     + "  userAddress  TEXT NOT NULL,"
@@ -160,15 +167,19 @@ export async function refresh():Promise<boolean> {
     + "  signType     INT NOT NULL,"
     + "  signImgUrl   TEXT,"
     + "  userTokenId  INT," // NOT NULL (null in tokenId 3922 on 12/18/2022)
-    + "  landType     INT,"
+    + "  landType     INT NOT NULL,"
+    + "  notifyExist  INT NOT NULL," // boolean
+    + "  creator      TEXT,"
+    + "  skipPP       INT NOT NULL,"
+    + "  notifyId     TEXT,"
     + "  UNIQUE (x, y)"
     + ");");
 
   const stmt = db.prepareQuery(
       "INSERT INTO Land ("
-      + "  regionWeight, regionId, x, y, imageUrl, imageStatus, level, onMarket, userAddress, tokenId, marketX, marketY, signType, signImgUrl, userTokenId, landType"
+      + "  regionWeight, regionId, x, y, imageUrl, imageStatus, level, onMarket, userAddress, tokenId, marketX, marketY, signType, signImgUrl, userTokenId, landType, notifyExist, creator, skipPP, notifyId"
       + ") VALUES ("
-      + " :regionWeight,:regionId,:x,:y,:imageUrl,:imageStatus,:level,:onMarket,:userAddress,:tokenId,:marketX,:marketY,:signType,:signImgUrl,:userTokenId, :landType"
+      + " :regionWeight,:regionId,:x,:y,:imageUrl,:imageStatus,:level,:onMarket,:userAddress,:tokenId,:marketX,:marketY,:signType,:signImgUrl,:userTokenId,:landType,:notifyExist,:creator,:skipPP,:notifyId"
       + ")");
   for (const lands of islands) {
     for (const land of lands) {
@@ -499,11 +510,35 @@ const EXCEPTION_TOKEN_IDS = [
   15533,  // ( -82,-163): 6x6
   15569,  // ( -81, -72): 6x6
   15425,  // ( -66,-123): 6x6
+
+  // Wizard Land
+  32001,  // (  64,-164):  10x10 for BabySwap
+  32137,  // ( -59,-175): 6x6
+  32173,  // ( -41,-104): 6x6
+  32533,  // ( -36,-193): 6x6
+  32497,  // ( -20,-101): 6x6
+  32713,  // ( -12,-140): 6x6
+  32209,  // (  -7,-182): 6x6
+  32389,  // (  -4,-117): 6x6
+  32569,  // (  14,-140): 6x6
+  32605,  // (  20,-198): 6x6
+  32245,  // (  36,-167): 6x6
+  32461,  // (  53,-191): 6x6
+  32281,  // (  79, -71): 6x6
+  32749,  // (  90,-190): 6x6
+  32425,  // ( 102,-104): 6x6
+  32785,  // ( 117,-203): 6x6
+  32101,  // ( 118, -83): 6x6
+  32317,  // ( 133,-173): 6x6
+  32677,  // ( 135,-155): 6x6
+  32353,  // ( 170,-145): 6x6
+  32641,  // ( 192,-195): 6x6
 ];
 const SIGNTYPE_MULTIPLIER = [1, 1.5, 1.3, 1.1, 1.5];
 const LAND_BASE_POINT:{[key:number]: number}[] = [
   {1:100, 2:120}, // 0: Main land
   {1: 50, 2: 60}, // 1: Divinity Land
+  {1: 50, 2: 60}, // 1: Wizard Land
 ];
 
 export function calcProsperityPoints(address?:string): number {
