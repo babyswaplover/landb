@@ -25,7 +25,7 @@ Baby is the future.  Let's nurture the future together❣️
 ##### example.ts
 
 ```typescript
-import { getLandByLocation, refresh } from "https://raw.githubusercontent.com/babyswaplover/landb/0.2.8/mod.ts";
+import { getLandByLocation, refresh } from "https://raw.githubusercontent.com/babyswaplover/landb/main/mod.ts";
 
 
 // Refresh database (if you want; fetch will be skipped within 1 minute from last fetch to prevent server overload)
@@ -63,6 +63,25 @@ The result will be like:
   userTokenId: 0,
   landType: 0
 }
+```
+
+##### mylands.ts
+
+```typescript
+import { getLands } from "https://raw.githubusercontent.com/babyswaplover/landb/main/mod.ts";
+
+const walletAddres = "0x…"; // Please specify wallet address
+const lands = getLands(walletAddres);
+
+for (const land of lands) {
+  console.log(`(${land.x}, ${land.y}), ${land.regionWeight}x${land.regionWeight}`);
+}
+```
+
+##### Execution
+
+```bash
+$ deno run --allow-net=ld-api.babyswap.io mylands.ts
 ```
 
 ## Tips
