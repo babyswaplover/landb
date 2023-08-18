@@ -126,7 +126,8 @@ export async function refresh():Promise<boolean> {
   for (const landType of [
     0, // Main Land
     1, // Divinity Land (2023/03/10)
-    2  // Wizard Land (2023/06/02)
+    2, // Wizard Land (2023/06/02)
+    3, // Scorpiton Land (2023/08/18)
   ]) {
     const lands = await fetchLandInfo(landType);
     if (!lands) {
@@ -512,7 +513,7 @@ const EXCEPTION_TOKEN_IDS = [
   15425,  // ( -66,-123): 6x6
 
   // Wizard Land
-  32001,  // (  64,-164):  10x10 for BabySwap
+  32001,  // (  64,-164): 10x10 for BabySwap
   32137,  // ( -59,-175): 6x6
   32173,  // ( -41,-104): 6x6
   32533,  // ( -36,-193): 6x6
@@ -533,12 +534,36 @@ const EXCEPTION_TOKEN_IDS = [
   32677,  // ( 135,-155): 6x6
   32353,  // ( 170,-145): 6x6
   32641,  // ( 192,-195): 6x6
+
+  // Scorpion Land
+  49001,  // (-101, 138): 10x10 for BabySwap
+  49101,  // (-220, 102): 6x6
+  49389,  // (-218, 133): 6x6
+  49173,  // (-215, 174): 6x6
+  49677,  // (-205,  48): 6x6
+  49425,  // (-197, 150): 6x6
+  49209,  // (-189,  90): 6x6
+  49569,  // (-180,  29): 6x6
+  49749,  // (-169, 177): 6x6
+  49245,  // (-133,  45): 6x6
+  49641,  // (-132, 110): 6x6
+  49497,  // (-132, 179): 6x6
+  49605,  // (-131,  82): 6x6
+  49353,  // (-129, 140): 6x6
+  49317,  // (-114,  16): 6x6
+  49533,  // (-109, 161): 6x6
+  49785,  // ( -95, 169): 6x6
+  49281,  // ( -84, 116): 6x6
+  49137,  // ( -74, 172): 6x6
+  49461,  // ( -57, 100): 6x6
+  49713,  // ( -43, 164): 6x6
 ];
 const SIGNTYPE_MULTIPLIER = [1, 1.5, 1.3, 1.1, 1.5];
 const LAND_BASE_POINT:{[key:number]: number}[] = [
   {1:100, 2:120}, // 0: Main land
   {1: 50, 2: 60}, // 1: Divinity Land
-  {1: 50, 2: 60}, // 1: Wizard Land
+  {1: 50, 2: 60}, // 2: Wizard Land
+  {1: 50, 2: 60}, // 3: Scorpion Land
 ];
 
 export function calcProsperityPoints(address?:string): number {
