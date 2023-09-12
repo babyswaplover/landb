@@ -6,8 +6,8 @@
  * 
  * Copyright 2022 babyswaplover
  */
-import { DB } from "https://deno.land/x/sqlite@v3.5.0/mod.ts";
-import { format } from "https://deno.land/std@0.156.0/datetime/mod.ts";
+import { DB } from "https://deno.land/x/sqlite@v3.8/mod.ts";
+import { format } from "https://deno.land/std@0.201.0/datetime/mod.ts";
 
 // Fetch interval (To prevent server overload)
 const FETCH_INTERVAL = 60 * 1000; // Skip fetch again within 1 minute
@@ -90,7 +90,7 @@ export async function fetchLandInfo(landType=0, option?:HeadersInit):Promise<Lan
           "Path": "/api/v1/land/info",
           "Origin": "https://land.babyswap.finance",
           "Referer": "https://land.babyswap.finance/",
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36"
       }, option),
       body: JSON.stringify({landType})
     });
