@@ -129,6 +129,7 @@ export async function refresh():Promise<boolean> {
     2, // Wizard Land (2023/06/02)
     3, // Scorpiton Land (2023/08/18)
     4, // Ghost Land (2023/10/16)
+    5  // Frosty Land (2023/12/22)
   ]) {
     const lands = await fetchLandInfo(landType);
     if (!lands) {
@@ -581,7 +582,31 @@ const EXCEPTION_TOKEN_IDS = [
   66137,  // ( 192, 162): 6x6
   66713,  // ( 217, 128): 6x6
   66533,  // ( 225, 183): 6x6
+
+  // Frosty Land
+  83677,  // (111, 6): 6x6
+  83641,  // (119, 68): 6x6
+  83497,  // (125, 62): 6x6
+  83209,  // (140, -65): 6x6
+  83173,  // (141, -48): 6x6
+  83425,  // (141, 22): 6x6
+  83389,  // (143, -101): 6x6
+  83245,  // (145, -4): 6x6
+  83461,  // (158, 56): 6x6
+  83001,  // (175, 0): 10x10
+  83749,  // (181, -91): 6x6
+  83533,  // (184, 65): 6x6
+  83353,  // (194, 91): 6x6
+  83785,  // (195, -103): 6x6
+  83281,  // (198, 83): 6x6
+  83137,  // (203, -36): 6x6
+  83317,  // (206, 48): 6x6
+  83101,  // (216, 29): 6x6
+  83569,  // (223, -15): 6x6
+  83713,  // (228, -108): 6x6
+  83605   // (232, -48): 6x6
 ];
+
 const SIGNTYPE_MULTIPLIER = [1, 1.5, 1.3, 1.1, 1.5];
 const LAND_BASE_POINT:{[key:number]: number}[] = [
   {1:100, 2:120}, // 0: Main land
@@ -589,6 +614,7 @@ const LAND_BASE_POINT:{[key:number]: number}[] = [
   {1: 50, 2: 60}, // 2: Wizard Land
   {1: 50, 2: 60}, // 3: Scorpion Land
   {1: 50, 2: 60}, // 4: Ghost Land
+  {1: 50, 2: 60}  // 5: Frosty Land
 ];
 
 export function calcProsperityPoints(address?:string): number {
